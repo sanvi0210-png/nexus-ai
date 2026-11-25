@@ -1,0 +1,90 @@
+# NEXUS AI
+
+Evidence-linked research workspace: upload PDFs, ask questions, get answers with page citations.
+Built following *NEXUS AI: Complete Build Guide*.
+
+## Status
+| Phase | Feature | State |
+|---|---|---|
+| 0 | Project setup, config | Implemented |
+| 1 | PDF ingestion with page metadata | Implemented |
+| 2 | Embeddings + Qdrant (local) search | Implemented |
+| 3 | Grounded answers, citation validation, abstention | Implemented |
+| 4 | Next.js UI, document list and delete | Implemented |
+| 5 | Hybrid search (BM25 + vectors, RRF), cross-encoder reranking, eval script | Implemented, run your own evaluation |
+| 6 | LangGraph research workflow (plan, research, analyse, verify, write) | Implemented, bounded to 1 revision |
+| 7 | GraphRAG (Neo4j) | Not built, needs a real relationship use case |
+| 8 | Docker files, README | Implemented. Auth and hosted deployment: not built |
+
+## Run locally (Windows PowerShell)
+Backend:
+```powershell
+cd backend
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env      # then put your Gemini key in .env
+uvicorn app.main:app --reload
+```
+Check http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs.
+
+Frontend (new terminal):
+```powershell
+cd frontend
+copy .env.local.example .env.local
+npm install
+npm run dev
+```
+Open http://localhost:3000.
+
+## Phase 5: compare retrieval modes
+1. Upload your PDFs, then copy `backend/eval/questions.example.json` to `questions.json` and write 30 to 50 real questions (expected file, page, and some should-abstain ones).
+2. From `backend/`: `python -m eval.run_eval --file eval/questions.json --k 5`
+3. The table compares semantic, hybrid and hybrid_rerank on hit@k, abstention and latency. Report only numbers you actually measured.
+
+## Phase 6: research workflow
+Tick "Deep research" in the UI, or `POST /api/research {"question": "...", "workspace_id": "default"}`.
+It plans sub-questions, retrieves evidence, drafts notes, fact-checks them, revises once, and flags anything still unverified.
+
+## Docker (local demo)
+```powershell
+docker compose up --build
+```
+
+## Tests
+```powershell
+cd backend
+pytest -q
+```
+
+## Smoke test (guide section 8)
+1. Upload a text-based PDF. Chunks indexed should be above zero.
+2. Ask something the PDF clearly answers. You should get an answer with `[S1]` markers and source cards.
+3. Ask something it does not cover. You should get the "not enough evidence" message.
+4. Upload a second PDF to the same workspace and ask a question that needs both.
+
+## Known limitations
+- No user accounts: anyone who can reach the API can read every workspace. Do not deploy publicly before adding auth.
+- Tests use a fake embedder and fake LLM. Real answer quality depends on your documents: measure it with the eval script.
+- Scanned PDFs are rejected (no OCR yet).
+- `MIN_SCORE` is a starting value. Tune it on your own question set.
+
+## Screenshots
+![Library](docs/01-library.png)
+![Cited answer](docs/02-answer.png)
+![Refusal when evidence is missing](docs/03-refusal.png)
+![Deep research report](docs/04-deep-research.png)
+
+## Evaluation
+I wrote 11 questions on one PDF (8 answerable, 3 that should be refused) and measured whether the correct page appears in the top k results.
+
+| Mode | hit@1 | hit@3 | hit@5 | Correct refusals | Avg latency |
+|---|---|---|---|---|---|
+| Semantic (vectors) | 3/8 | 6/8 | 8/8 | 3/3 | about 10 ms |
+| Hybrid (BM25 + vectors, RRF) | 6/8 | 8/8 | 8/8 | 3/3 | about 10-16 ms |
+| Hybrid + cross-encoder rerank | 8/8 | 8/8 | 8/8 | 3/3 | about 0.7-1 s |
+
+Each step improves ranking when only the top results count. Reranking costs about 1 second per query. The set is small and covers one document, so results are indicative, not conclusive.
+
+## Not built yet
+Login and user accounts, hosted deployment, GraphRAG.

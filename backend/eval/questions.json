@@ -1,0 +1,13 @@
+﻿[
+ {"question": "Which Python version does the guide recommend?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 3},
+ {"question": "What is Reciprocal Rank Fusion used for?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 11},
+ {"question": "How does a cross-encoder reranker work?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 11},
+ {"question": "Why should I not add Neo4j just for my resume?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 14},
+ {"question": "What is RAGAS and how should I treat its scores?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 14},
+ {"question": "Can I claim a 30 percent RAGAS improvement without running it?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 15},
+ {"question": "What does the 8 week execution plan cover?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 17},
+ {"question": "What causes a vector dimension mismatch error?", "expected_file": "NEXUS_AI_Complete_Build_Guide.pdf", "expected_page": 18},
+ {"question": "What is the capital of France?", "should_abstain": true},
+ {"question": "Who won the 2022 football world cup?", "should_abstain": true},
+ {"question": "How do I bake sourdough bread?", "should_abstain": true}
+]

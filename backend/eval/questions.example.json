@@ -1,0 +1,5 @@
+[
+  {"question": "What limitation does Paper A report?", "workspace_id": "default", "expected_file": "paper-a.pdf", "expected_page": 8},
+  {"question": "How does reranking change precision?", "workspace_id": "default", "expected_file": "paper-b.pdf"},
+  {"question": "What is the capital of France?", "workspace_id": "default", "should_abstain": true}
+]

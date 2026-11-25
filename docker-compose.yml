@@ -1,0 +1,11 @@
+# Local demo only. Add authentication before exposing this to the internet.
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    ports: ["8000:8000"]
+    volumes: ["./backend/data:/app/data"]   # keeps uploads, vectors and the document list
+  frontend:
+    build: ./frontend
+    ports: ["3000:3000"]
+    depends_on: [backend]
