@@ -1,4 +1,4 @@
-# NEXUS AI
+﻿# NEXUS AI
 
 Evidence-linked research workspace: upload PDFs, ask questions, get answers with page citations.
 Built following *NEXUS AI: Complete Build Guide*.
@@ -70,10 +70,8 @@ pytest -q
 - `MIN_SCORE` is a starting value. Tune it on your own question set.
 
 ## Screenshots
-![Library](docs/01-library.png)
 ![Cited answer](docs/02-answer.png)
 ![Refusal when evidence is missing](docs/03-refusal.png)
-![Deep research report](docs/04-deep-research.png)
 
 ## Evaluation
 I wrote 11 questions on one PDF (8 answerable, 3 that should be refused) and measured whether the correct page appears in the top k results.
