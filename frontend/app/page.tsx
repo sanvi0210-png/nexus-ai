@@ -21,6 +21,7 @@ const SUGGESTIONS = [
   "What risks or limitations are mentioned?",
   "Compare the key ideas across my documents",
 ];
+const MODES: [string, string][] = [["semantic", "Semantic"], ["hybrid", "Hybrid"], ["hybrid_rerank", "Rerank"]];
 const PHASES = ["Planning sub-questions", "Retrieving passages", "Analysing sources", "Fact-checking claims", "Writing the report"];
 
 async function readError(res: Response): Promise<string> {
@@ -133,6 +134,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [deep, setDeep] = useState(false);
   const [mode, setMode] = useState("hybrid");
+  const [canRerank, setCanRerank] = useState(true);
   const [phase, setPhase] = useState(0);
   const [active, setActive] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -162,6 +164,12 @@ export default function Home() {
     }
   }, []);
   useEffect(() => { loadDocs(); }, [loadDocs]);
+  useEffect(() => {
+    fetch(`${API}/config`).then((r) => r.json()).then((c) => {
+      setCanRerank(!!c.rerank);
+      if (!c.rerank) setMode((m) => (m === "hybrid_rerank" ? "hybrid" : m));
+    }).catch(() => {});
+  }, []);
   useEffect(() => { streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: "smooth" }); }, [log, busy]);
   useEffect(() => {
     if (!(busy && deep)) { setPhase(0); return; }
@@ -337,7 +345,7 @@ export default function Home() {
               <span className="knob" /><span className="switch-label">Deep research</span>
             </button>
             <div className={`seg ${deep ? "disabled" : ""}`} role="group" aria-label="Retrieval mode">
-              {[["semantic", "Semantic"], ["hybrid", "Hybrid"], ["hybrid_rerank", "Rerank"]].map(([v, l]) => (
+              {MODES.filter(([v]) => canRerank || v !== "hybrid_rerank").map(([v, l]) => (
                 <button key={v} type="button" disabled={deep} aria-pressed={mode === v} className={mode === v ? "on" : ""} onClick={() => setMode(v)}>{l}</button>
               ))}
             </div>

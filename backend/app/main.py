@@ -17,12 +17,15 @@ app.include_router(router, prefix="/api")
 
 @app.on_event("startup")
 def warm_up():
-    # Load the models at startup so the first visitor does not wait.
+    # Local models: load them at startup so the first visitor does not wait.
+    if settings.embedding_provider != "local":
+        return
     from app.services.embedding_service import embed_query
-    from app.services.retrieval_service import rerank
+    from app.services.retrieval_service import rerank, rerank_available
 
     embed_query("warm up")
-    rerank("warm up", [{"text": "warm up"}], 1)
+    if rerank_available():
+        rerank("warm up", [{"text": "warm up"}], 1)
 
 
 @app.get("/health")

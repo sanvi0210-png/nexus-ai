@@ -51,6 +51,11 @@ def test_upload_ask_delete_flow(client):
     assert gone["insufficient_evidence"]
 
 
+def test_config_endpoint(client):
+    body = client.get("/api/config").json()
+    assert "rerank" in body and body["embedding_provider"] == "local"
+
+
 def test_rejects_fake_pdf(client):
     r = client.post("/api/documents/upload", files={"file": ("x.pdf", b"not a pdf", "application/pdf")})
     assert r.status_code == 400

@@ -14,11 +14,11 @@ from app.services.vector_service import add_chunks, delete_document_vectors
 
 router = APIRouter()
 WS = r"^[A-Za-z0-9_-]+$"
-UPLOAD_DIR = "data/uploads"
+UPLOAD_DIR = os.path.join(settings.data_dir, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@router.post("/documents/upload", response_model=DocumentInfo, dependencies=[Depends(rate_limit("upload", 6))])
+@router.post("/documents/upload", response_model=DocumentInfo, dependencies=[Depends(rate_limit("upload", 6, cost=2))])
 async def upload_document(file: UploadFile = File(...), workspace_id: str = Query("default", max_length=64, pattern=WS)):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Please upload a PDF file.")
@@ -55,7 +55,11 @@ async def upload_document(file: UploadFile = File(...), workspace_id: str = Quer
     for p in pages:
         p["filename"] = safe_name
     chunks = make_chunks(pages)
-    add_chunks(chunks, workspace_id, document_id)
+    try:
+        add_chunks(chunks, workspace_id, document_id)
+    except LLMError as exc:
+        os.remove(path)
+        raise HTTPException(502, f"Could not index this document right now: {exc}")
 
     row = {
         "document_id": document_id,
@@ -101,3 +105,10 @@ def research(request: ResearchRequest):
         return run_research(request.question, request.workspace_id)
     except LLMError as exc:
         raise HTTPException(502, f"The language model request failed: {exc}")
+
+
+@router.get("/config")
+def get_config():
+    from app.services.retrieval_service import rerank_available
+
+    return {"rerank": rerank_available(), "embedding_provider": settings.embedding_provider}

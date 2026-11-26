@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Tune this on your own evaluation set (guide section 10F).
     min_score: float = 0.25
     allowed_origins: str = "http://localhost:3000"
+    # "local" = sentence-transformers on this machine, "gemini" = Google embedding API (tiny memory footprint)
+    embedding_provider: str = "local"
+    data_dir: str = "data"
     # Public-demo guards (the Space Dockerfile sets tighter values)
     max_pages: int = 300
     max_docs_per_workspace: int = 50

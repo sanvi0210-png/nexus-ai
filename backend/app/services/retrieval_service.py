@@ -1,3 +1,4 @@
+import importlib.util
 import re
 
 from rank_bm25 import BM25Okapi
@@ -36,10 +37,16 @@ def keyword_hits(question: str, workspace_id: str, n: int) -> list[dict]:
     return [{**chunks[i], "score": 0.0} for i in order if scores[i] > 0]
 
 
+def rerank_available() -> bool:
+    return importlib.util.find_spec("sentence_transformers") is not None
+
+
 def rerank(question: str, passages: list[dict], keep: int) -> list[dict]:
     global _reranker
     if not passages:
         return []
+    if not rerank_available():  # slim deployment without PyTorch: keep the hybrid order
+        return passages[:keep]
     if _reranker is None:
         from sentence_transformers import CrossEncoder
 

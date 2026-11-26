@@ -86,3 +86,14 @@ Each step improves ranking when only the top results count. Reranking costs abou
 
 ## Not built yet
 Login and user accounts, hosted deployment, GraphRAG.
+
+## Evaluation: live demo setup (Gemini embeddings, no reranker)
+Same 11 questions (8 answerable, 3 should-refuse), refusal threshold 0.57, measured on one PDF.
+
+| Mode | hit@1 | hit@3 | Correct refusals | Avg latency |
+|---|---|---|---|---|
+| Semantic | 6/8 | 7/8 | 3/3 | ~0.4 s |
+| Hybrid (BM25 + vectors, RRF) | 7/8 | 8/8 | 3/3 | ~0.4 s |
+| Hybrid + cross-encoder rerank (local only) | 8/8 | 8/8 | 3/3 | ~1.7 s |
+
+Switching from the local MiniLM embedding model to Gemini embeddings raised semantic hit@1 from 3/8 to 6/8 on this set. The cross-encoder needs PyTorch, which does not fit on a 512 MB free host, so the live site runs Hybrid. The set is small, so differences of one question are not conclusive.

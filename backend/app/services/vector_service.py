@@ -3,17 +3,17 @@ from uuid import NAMESPACE_URL, uuid5
 from qdrant_client import QdrantClient, models
 
 from app.config import settings
-from app.services.embedding_service import embed_query, embed_texts
+from app.services.embedding_service import PROVIDER, VECTOR_SIZE, embed_query, embed_texts
 
 client = QdrantClient(path=settings.qdrant_path)
 corpus_version = 0  # bumped on every change so the BM25 cache knows to rebuild
-VECTOR_SIZE = 384  # all-MiniLM-L6-v2. Recreate the collection if you change the model.
+COLLECTION = settings.collection_name if PROVIDER == "local" else f"{settings.collection_name}_gemini{VECTOR_SIZE}"
 
 
 def ensure_collection():
-    if not client.collection_exists(settings.collection_name):
+    if not client.collection_exists(COLLECTION):
         client.create_collection(
-            collection_name=settings.collection_name,
+            collection_name=COLLECTION,
             vectors_config=models.VectorParams(size=VECTOR_SIZE, distance=models.Distance.COSINE),
         )
 
@@ -32,13 +32,13 @@ def add_chunks(chunks: list[dict], workspace_id: str, document_id: str) -> None:
         for i, (chunk, vector) in enumerate(zip(chunks, vectors))
     ]
     if points:
-        client.upsert(collection_name=settings.collection_name, points=points)
+        client.upsert(collection_name=COLLECTION, points=points)
 
 
 def search_chunks(question: str, workspace_id: str, top_k: int = 5) -> list[dict]:
     ensure_collection()
     result = client.query_points(
-        collection_name=settings.collection_name,
+        collection_name=COLLECTION,
         query=embed_query(question),
         query_filter=models.Filter(
             must=[models.FieldCondition(key="workspace_id", match=models.MatchValue(value=workspace_id))]
@@ -54,7 +54,7 @@ def delete_document_vectors(document_id: str) -> None:
     ensure_collection()
     corpus_version += 1
     client.delete(
-        collection_name=settings.collection_name,
+        collection_name=COLLECTION,
         points_selector=models.FilterSelector(
             filter=models.Filter(
                 must=[models.FieldCondition(key="document_id", match=models.MatchValue(value=document_id))]
@@ -72,7 +72,7 @@ def all_chunks(workspace_id: str) -> list[dict]:
     out, offset = [], None
     while True:
         points, offset = client.scroll(
-            collection_name=settings.collection_name, scroll_filter=flt,
+            collection_name=COLLECTION, scroll_filter=flt,
             limit=256, offset=offset, with_payload=True, with_vectors=False,
         )
         out += [{"id": str(p.id), **(p.payload or {})} for p in points]

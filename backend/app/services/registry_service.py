@@ -3,7 +3,9 @@ import json
 import threading
 from pathlib import Path
 
-_PATH = Path("data/documents.json")
+from app.config import settings
+
+_PATH = Path(settings.data_dir) / "documents.json"
 _LOCK = threading.Lock()
 
 
