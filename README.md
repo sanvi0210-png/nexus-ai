@@ -3,6 +3,19 @@
 Evidence-linked research workspace: upload PDFs, ask questions, get answers with page citations.
 Built following *NEXUS AI: Complete Build Guide*.
 
+## Live demo
+
+**Try it here: https://nexus-ai-three-sandy.vercel.app**
+
+This is a free demo, so please keep these in mind:
+- Each browser gets its own private workspace. There are no user accounts or login.
+- Uploaded files are temporary and may be cleared whenever the server restarts.
+- The backend sleeps when idle, so the first visit can take up to a minute.
+- Limits: 5 documents per workspace, 10 MB and 80 pages per PDF.
+- Please don't upload confidential documents.
+
+Stack: Next.js on Vercel, FastAPI on Render, Qdrant, Gemini.
+
 ## Status
 | Phase | Feature | State |
 |---|---|---|
@@ -14,7 +27,7 @@ Built following *NEXUS AI: Complete Build Guide*.
 | 5 | Hybrid search (BM25 + vectors, RRF), cross-encoder reranking, eval script | Implemented, run your own evaluation |
 | 6 | LangGraph research workflow (plan, research, analyse, verify, write) | Implemented, bounded to 1 revision |
 | 7 | GraphRAG (Neo4j) | Not built, needs a real relationship use case |
-| 8 | Docker files, README | Implemented. Auth and hosted deployment: not built |
+| 8 | Docker files, README, hosted demo (Render + Vercel) | Implemented. Auth: not built |
 
 ## Run locally (Windows PowerShell)
 Backend:
