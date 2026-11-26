@@ -126,3 +126,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,.drop:focus-visi
   .msg-me{max-width:92%}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.ws-tag{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(5,9,28,.5);font-size:13px;color:var(--mut)}
+.ws-tag .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);flex:none}
+.ws-id{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--tx)}
+.privacy{font-size:12px;color:var(--mut);line-height:1.5;border-top:1px solid var(--line);padding-top:12px}

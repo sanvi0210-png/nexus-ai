@@ -12,7 +12,9 @@ def client(monkeypatch):
     monkeypatch.setattr(vector_service, "embed_query", fake_embed)
     monkeypatch.setattr(rag_service, "generate", lambda prompt: "Reranking raises precision [S1]. Fake [S9].")
     from app.main import app
+    from app.services import limits
 
+    limits._hits.clear()
     return TestClient(app)
 
 
@@ -52,3 +54,13 @@ def test_upload_ask_delete_flow(client):
 def test_rejects_fake_pdf(client):
     r = client.post("/api/documents/upload", files={"file": ("x.pdf", b"not a pdf", "application/pdf")})
     assert r.status_code == 400
+
+
+def test_rate_limit_and_bad_workspace(client):
+    codes = [client.post("/api/ask", json={"question": "reranking precision", "workspace_id": "rl"}).status_code for _ in range(18)]
+    assert 429 in codes
+    from app.services import limits
+
+    limits._hits.clear()
+    bad = client.post("/api/ask", json={"question": "hello there", "workspace_id": "../x"})
+    assert bad.status_code == 422

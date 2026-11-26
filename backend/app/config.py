@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     # Tune this on your own evaluation set (guide section 10F).
     min_score: float = 0.25
     allowed_origins: str = "http://localhost:3000"
+    # Public-demo guards (the Space Dockerfile sets tighter values)
+    max_pages: int = 300
+    max_docs_per_workspace: int = 50
+    daily_llm_budget: int = 100000
     # semantic | hybrid | hybrid_rerank
     retrieval_mode: str = "hybrid"
 

@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
-    workspace_id: str = Field(default="default", min_length=1, max_length=64)
+    workspace_id: str = Field(default="default", min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     top_k: int = Field(default=5, ge=1, le=15)
     mode: str | None = None  # semantic | hybrid | hybrid_rerank
 
@@ -33,7 +33,7 @@ class DocumentInfo(BaseModel):
 
 class ResearchRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
-    workspace_id: str = Field(default="default", min_length=1, max_length=64)
+    workspace_id: str = Field(default="default", min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class ResearchResponse(BaseModel):

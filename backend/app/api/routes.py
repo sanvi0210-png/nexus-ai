@@ -1,25 +1,30 @@
 import os
 from uuid import uuid4
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from app.config import settings
 from app.schemas import AskRequest, AskResponse, DocumentInfo, ResearchRequest, ResearchResponse
 from app.services import registry_service as registry
 from app.services.chunk_service import make_chunks
+from app.services.limits import rate_limit
 from app.services.pdf_service import extract_pdf_pages
 from app.services.rag_service import LLMError, answer_question
 from app.services.vector_service import add_chunks, delete_document_vectors
 
 router = APIRouter()
+WS = r"^[A-Za-z0-9_-]+$"
 UPLOAD_DIR = "data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@router.post("/documents/upload", response_model=DocumentInfo)
-async def upload_document(file: UploadFile = File(...), workspace_id: str = Query("default", max_length=64)):
+@router.post("/documents/upload", response_model=DocumentInfo, dependencies=[Depends(rate_limit("upload", 6))])
+async def upload_document(file: UploadFile = File(...), workspace_id: str = Query("default", max_length=64, pattern=WS)):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Please upload a PDF file.")
+
+    if len(registry.list_documents(workspace_id)) >= settings.max_docs_per_workspace:
+        raise HTTPException(400, f"Demo limit: up to {settings.max_docs_per_workspace} documents per workspace. Delete one first.")
 
     limit = settings.max_upload_mb * 1024 * 1024
     data = await file.read(limit + 1)
@@ -43,6 +48,10 @@ async def upload_document(file: UploadFile = File(...), workspace_id: str = Quer
         os.remove(path)
         raise HTTPException(422, "No selectable text found. This may be a scanned PDF.")
 
+    if len(pages) > settings.max_pages:
+        os.remove(path)
+        raise HTTPException(413, f"This PDF has {len(pages)} pages. The limit is {settings.max_pages}.")
+
     for p in pages:
         p["filename"] = safe_name
     chunks = make_chunks(pages)
@@ -60,7 +69,7 @@ async def upload_document(file: UploadFile = File(...), workspace_id: str = Quer
 
 
 @router.get("/documents", response_model=list[DocumentInfo])
-def list_documents(workspace_id: str = Query("default", max_length=64)):
+def list_documents(workspace_id: str = Query("default", max_length=64, pattern=WS)):
     return registry.list_documents(workspace_id)
 
 
@@ -76,7 +85,7 @@ def delete_document(document_id: str):
     return {"deleted": document_id}
 
 
-@router.post("/ask", response_model=AskResponse)
+@router.post("/ask", response_model=AskResponse, dependencies=[Depends(rate_limit("ask", 15, cost=1))])
 def ask(request: AskRequest):
     try:
         return answer_question(request.question, request.workspace_id, request.top_k, request.mode)
@@ -84,7 +93,7 @@ def ask(request: AskRequest):
         raise HTTPException(502, f"The language model request failed: {exc}")
 
 
-@router.post("/research", response_model=ResearchResponse)
+@router.post("/research", response_model=ResearchResponse, dependencies=[Depends(rate_limit("research", 4, cost=5))])
 def research(request: ResearchRequest):
     from app.services.agent_service import run_research  # imported lazily: needs `pip install langgraph`
 

@@ -121,7 +121,7 @@ const I = {
 };
 
 export default function Home() {
-  const [workspace, setWorkspace] = useState("default");
+  const [workspace, setWorkspace] = useState("");
   const [docs, setDocs] = useState<Doc[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -141,6 +141,7 @@ export default function Home() {
   const note = (text: string, error = false) => { setStatus(text); setIsError(error); };
 
   const loadDocs = useCallback(async () => {
+    if (!workspace) return;
     try {
       const res = await fetch(`${API}/documents?workspace_id=${encodeURIComponent(workspace)}`);
       if (res.ok) setDocs(await res.json());
@@ -149,6 +150,17 @@ export default function Home() {
     }
   }, [workspace]);
 
+  useEffect(() => {
+    // Each browser gets its own private workspace id, kept in localStorage.
+    const rand = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "") : Math.random().toString(36).slice(2) + Date.now().toString(36));
+    try {
+      let id = localStorage.getItem("nexus_ws");
+      if (!id) { id = "u" + rand(); localStorage.setItem("nexus_ws", id); }
+      setWorkspace(id);
+    } catch {
+      setWorkspace("u" + rand());
+    }
+  }, []);
   useEffect(() => { loadDocs(); }, [loadDocs]);
   useEffect(() => { streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: "smooth" }); }, [log, busy]);
   useEffect(() => {
@@ -185,7 +197,7 @@ export default function Home() {
 
   async function ask(text?: string) {
     const q = (text ?? question).trim();
-    if (q.length < 3 || busy) return;
+    if (q.length < 3 || busy || !workspace) return;
     setLog((l) => [...l, { role: "me", text: q }]);
     setQuestion(""); setBusy(true); note("");
     try {
@@ -252,8 +264,8 @@ export default function Home() {
         </div>
 
         <section>
-          <label className="label" htmlFor="ws">Workspace</label>
-          <input id="ws" className="field" value={workspace} onChange={(e) => setWorkspace(e.target.value || "default")} />
+          <div className="label">Workspace</div>
+          <div className="ws-tag"><span className="dot" />Private to this browser<span className="ws-id">{workspace.slice(1, 7)}</span></div>
         </section>
 
         <section>
@@ -291,6 +303,7 @@ export default function Home() {
             ))}
           </div>
         </section>
+        <p className="privacy">Demo: files are stored temporarily and may be cleared at any time. Please don&apos;t upload confidential documents. Answers are generated with Google Gemini.</p>
       </aside>
 
       <main className="panel main">

@@ -1,0 +1,28 @@
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/home/user/.cache/huggingface \
+    HF_HUB_DISABLE_SYMLINKS_WARNING=1 \
+    QDRANT_PATH=/home/user/app/data/qdrant \
+    MAX_UPLOAD_MB=10 \
+    MAX_PAGES=80 \
+    MAX_DOCS_PER_WORKSPACE=5 \
+    DAILY_LLM_BUDGET=300
+
+RUN useradd -m -u 1000 user && mkdir -p /home/user/app/data && chown -R user:user /home/user
+WORKDIR /home/user/app
+
+COPY requirements.txt .
+# CPU-only PyTorch keeps the image small and the build fast
+RUN pip install torch --index-url https://download.pytorch.org/whl/cpu \
+ && pip install -r requirements.txt
+
+USER user
+# Download both models at build time so the first visitor does not wait
+RUN python -c "from sentence_transformers import SentenceTransformer, CrossEncoder; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+
+COPY --chown=user app ./app
+
+EXPOSE 7860
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
